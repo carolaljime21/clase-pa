@@ -1,0 +1,159 @@
+package ec.edu.utpl.computacion.pa.semana1;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Scanner;
+
+public class App {
+
+    public static void main(String[] args) throws Exception {
+        try (Connection con
+                = DriverManager.getConnection("jdbc:h2:~/demo1", "sa", "")) {
+            //1. CREAR TABLA
+            //createTable(con);
+
+            //2. AGREGAR DATOS
+            //addData(con);
+            
+            //CONSULTA DE DATOS
+            //getAllData(con);
+            
+            //CALCULAR EDAD
+            //System.out.println(calcularEdad(con));
+            
+            //NOMBRES QUE EMPIEZAN CON CIERTA LETRA
+            //searchName(con);
+            
+            //BUSCAR POR ID
+            Scanner lector = new Scanner(System.in);
+            System.out.println("Ingrese el id: ");
+            String id = lector.nextLine();
+            //searchById(id, con);
+            searchByIdNoError(id, con);
+        }
+
+    }
+
+    private static void addData(Connection con) throws SQLException {
+        var insert = """
+                     INSERT INTO REGISTRATION VALUES (3, 'JONATHAN', 'JIMENEZ', '20');
+                     INSERT INTO REGISTRATION VALUES (4, 'CAMILA', 'ROMERO', '17');
+                     INSERT INTO REGISTRATION VALUES (5, 'JAVIER', 'ALVARADO', '17')
+                     """;
+        try (Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(insert);
+        }
+    }
+    
+    private static double calcularEdad(Connection con) throws SQLException {
+        var calcular = "SELECT AVG(AGE) FROM REGISTRATION";
+        try (
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(calcular)
+        ){
+            rs.next();
+            return rs.getDouble("AVG(AGE)");
+    }
+  }
+    
+    private static void searchName(Connection con) throws SQLException {
+        var search = """
+                     SELECT FIRST_NAME 
+                     FROM REGISTRATION 
+                     WHERE FIRST_NAME LIKE 'J%'
+                     """;
+        try (
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(search)
+        ){
+           while(rs.next()){
+               System.out.printf("%s%n", rs.getString("FIRST_NAME"));
+      }
+    }
+  }
+
+    private static void createTable(Connection con) throws SQLException {
+        var createTable = """
+                CREATE TABLE IF NOT EXISTS REGISTRATION
+                (
+                ID INTEGER NOT NULL,
+                FIRST_NAME VARCHAR(255),
+                LAST_NAME VARCHAR(255),
+                AGE INTEGER,
+                CONSTRAINT REGISTRATION_pkey PRIMARY KEY (ID)
+                );
+                """;
+
+        try (Statement stmt = con.createStatement()) {
+            stmt.executeUpdate(createTable);
+        }
+    }
+
+    private static void getAllData(Connection con)throws SQLException {
+        var select = "SELECT ID, FIRST_NAME, LAST_NAME, AGE FROM REGISTRATION";
+        try (
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(select)
+        ){
+            
+            while(rs.next()){
+                System.out.printf("%d - %s %s (%d)%n",
+                        rs.getInt("ID"),
+                        rs.getString("LAST_NAME"),
+                        rs.getString("FIRST_NAME"),
+                        rs.getInt("AGE")
+                        );
+            }
+        }
+    }
+        
+        private static void searchById(String id, Connection con)throws SQLException {
+        var selectBase = """
+                     SELECT ID, FIRST_NAME, LAST_NAME, AGE 
+                     FROM REGISTRATION
+                     WHERE ID = %s
+                     """;
+        var select = String.format(selectBase, id);
+        try (
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(select)
+        ){
+            
+            while(rs.next()){
+                System.out.printf("%d - %s %s (%d)%n",
+                        rs.getInt("ID"),
+                        rs.getString("LAST_NAME"),
+                        rs.getString("FIRST_NAME"),
+                        rs.getInt("AGE")
+                        );
+            }
+        }
+    }
+        
+        private static void searchByIdNoError(String id, Connection con)throws SQLException {
+        var select= """
+                     SELECT ID, FIRST_NAME, LAST_NAME, AGE 
+                     FROM REGISTRATION
+                     WHERE ID = ?
+                     """;
+        PreparedStatement pStmt = con.prepareStatement(select);
+        pStmt.setString(1, id);
+        try (
+                ResultSet rs = pStmt.executeQuery()
+        ){
+            
+            while(rs.next()){
+                System.out.printf("%d - %s %s (%d)%n",
+                        rs.getInt("ID"),
+                        rs.getString("LAST_NAME"),
+                        rs.getString("FIRST_NAME"),
+                        rs.getInt("AGE")
+                        );
+            }
+        }
+    }
+}
